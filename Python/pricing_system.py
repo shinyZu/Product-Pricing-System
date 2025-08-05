@@ -60,11 +60,10 @@ customer_groups = {
 }
 
 # Function to find the best price
-def get_best_price(product_id, quantity, customer_id): # 1, 4, 2
+def get_best_price(product_id, quantity, customer_id):
     # 1. CUSTOMER PRICE
     key = (customer_id, product_id)
     if(key in customer_prices):
-        # list comprehension
         valid_prices = [price_entry for price_entry in customer_prices[key] if price_entry["min_qty"] <= quantity]
         if valid_prices:
             best_price = min(valid_prices, key=lambda x: x["price"])

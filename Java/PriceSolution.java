@@ -1,3 +1,5 @@
+import java.util.*;
+
 class PriceEntry {
     int minQty;
     double price;
@@ -20,7 +22,6 @@ class ProductRequest {
     }
 }
 
-
 class ProductResponse {
     String productId;
     double price;
@@ -38,95 +39,98 @@ class ProductResponse {
     }
 }
 
-class PriceSoutions{
+public class PriceSolution {
 
-	Map<String, List<PriceEntry>> customerPrices = new HashMap<>();
-Map<String, List<PriceEntry>> tierPrices = new HashMap<>();
-Map<String, List<PriceEntry>> groupPrices = new HashMap<>();
-Map<Integer, List<PriceEntry>> normalPrices = new HashMap<>();
+    // Declare data as static so it's accessible from static methods like main()
+    static Map<String, List<PriceEntry>> customerPrices = new HashMap<>();
+    static Map<String, List<PriceEntry>> tierPrices = new HashMap<>();
+    static Map<String, List<PriceEntry>> groupPrices = new HashMap<>();
+    static Map<Integer, List<PriceEntry>> normalPrices = new HashMap<>();
 
-Map<Integer, String> customerTiers = new HashMap<>();
-Map<Integer, List<String>> customerGroups = new HashMap<>();
+    static Map<Integer, String> customerTiers = new HashMap<>();
+    static Map<Integer, List<String>> customerGroups = new HashMap<>();
 
-customerPrices.put("2_2", Arrays.asList(new PriceEntry(3, 5))); // customer 2, product 2
-tierPrices.put("Silver_1", Arrays.asList(new PriceEntry(2, 95))); // Silver tier, product 1
-groupPrices.put("G1_1", Arrays.asList(new PriceEntry(2, 100)));
-normalPrices.put(1, Arrays.asList(new PriceEntry(1, 120)));
-normalPrices.put(2, Arrays.asList(new PriceEntry(1, 10)));
+    static {
+        // Mock data initialization
+        customerPrices.put("2_2", Arrays.asList(new PriceEntry(3, 5))); // customer 2, product 2
+        tierPrices.put("Silver_1", Arrays.asList(new PriceEntry(2, 95))); // Silver tier, product 1
+        groupPrices.put("G1_1", Arrays.asList(new PriceEntry(2, 100))); // Group G1, product 1
 
-customerTiers.put(2, "Silver");
-customerTiers.put(6, "Gold");
+        normalPrices.put(1, Arrays.asList(new PriceEntry(1, 120)));
+        normalPrices.put(2, Arrays.asList(new PriceEntry(1, 10)));
 
-customerGroups.put(2, Arrays.asList("G1"));
-customerGroups.put(6, new ArrayList<>());
+        customerTiers.put(2, "Silver");
+        customerTiers.put(6, "Gold");
 
-public static ProductResponse getBestPrice(ProductRequest req) {
-    int productId = req.productId;
-    int quantity = req.quantity;
-    int customerId = req.customerId;
-
-    String customerKey = customerId + "_" + productId;
-
-    // 1. Customer Price
-    if (customerPrices.containsKey(customerKey)) {
-        for (PriceEntry entry : customerPrices.get(customerKey)) {
-            if (quantity >= entry.minQty) {
-                return new ProductResponse("P00" + productId, entry.price, "CUSTOMER");
-            }
-        }
+        customerGroups.put(2, Arrays.asList("G1"));
+        customerGroups.put(6, new ArrayList<>());
     }
 
-    // 2. Tier Price
-    if (customerTiers.containsKey(customerId)) {
-        String tier = customerTiers.get(customerId);
-        String tierKey = tier + "_" + productId;
-        if (tierPrices.containsKey(tierKey)) {
-            for (PriceEntry entry : tierPrices.get(tierKey)) {
+    public static ProductResponse getBestPrice(ProductRequest req) {
+        int productId = req.productId;
+        int quantity = req.quantity;
+        int customerId = req.customerId;
+
+        String customerKey = customerId + "_" + productId;
+
+        // 1. Customer Price
+        if (customerPrices.containsKey(customerKey)) {
+            for (PriceEntry entry : customerPrices.get(customerKey)) {
                 if (quantity >= entry.minQty) {
-                    return new ProductResponse("P00" + productId, entry.price, "TIER");
+                    return new ProductResponse("P00" + productId, entry.price, "CUSTOMER");
                 }
             }
         }
-    }
 
-    // 3. Group Price
-    if (customerGroups.containsKey(customerId)) {
-        for (String group : customerGroups.get(customerId)) {
-            String groupKey = group + "_" + productId;
-            if (groupPrices.containsKey(groupKey)) {
-                for (PriceEntry entry : groupPrices.get(groupKey)) {
+        // 2. Tier Price
+        if (customerTiers.containsKey(customerId)) {
+            String tier = customerTiers.get(customerId);
+            String tierKey = tier + "_" + productId;
+            if (tierPrices.containsKey(tierKey)) {
+                for (PriceEntry entry : tierPrices.get(tierKey)) {
                     if (quantity >= entry.minQty) {
-                        return new ProductResponse("P00" + productId, entry.price, "GROUP");
+                        return new ProductResponse("P00" + productId, entry.price, "TIER");
                     }
                 }
             }
         }
-    }
 
-    // 4. Normal Price
-    if (normalPrices.containsKey(productId)) {
-        for (PriceEntry entry : normalPrices.get(productId)) {
-            if (quantity >= entry.minQty) {
-                return new ProductResponse("P00" + productId, entry.price, "NORMAL");
+        // 3. Group Price
+        if (customerGroups.containsKey(customerId)) {
+            for (String group : customerGroups.get(customerId)) {
+                String groupKey = group + "_" + productId;
+                if (groupPrices.containsKey(groupKey)) {
+                    for (PriceEntry entry : groupPrices.get(groupKey)) {
+                        if (quantity >= entry.minQty) {
+                            return new ProductResponse("P00" + productId, entry.price, "GROUP");
+                        }
+                    }
+                }
             }
         }
+
+        // 4. Normal Price
+        if (normalPrices.containsKey(productId)) {
+            for (PriceEntry entry : normalPrices.get(productId)) {
+                if (quantity >= entry.minQty) {
+                    return new ProductResponse("P00" + productId, entry.price, "NORMAL");
+                }
+            }
+        }
+
+        return new ProductResponse("P00" + productId, 0, "NOT_FOUND");
     }
 
-    return new ProductResponse("P00" + productId, 0, "NOT_FOUND");
-}
+    public static void main(String[] args) {
+        List<ProductRequest> requests = Arrays.asList(
+            new ProductRequest(1, 4, 2),  // Tier price (Silver)
+            new ProductRequest(2, 3, 6),  // Normal price
+            new ProductRequest(1, 3, 6),  // Normal price
+            new ProductRequest(3, 2, 6)   // Not found
+        );
 
-public static void main(String[] args) {
-    List<ProductRequest> requests = Arrays.asList(
-        new ProductRequest(1, 4, 2),
-        new ProductRequest(2, 3, 6),
-        new ProductRequest(1, 3, 6),
-        new ProductRequest(3, 2, 6)  // not found case
-    );
-
-    for (ProductRequest req : requests) {
-        System.out.println(getBestPrice(req));
+        for (ProductRequest req : requests) {
+            System.out.println(getBestPrice(req));
+        }
     }
-}
-
-
 }

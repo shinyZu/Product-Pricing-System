@@ -62,57 +62,66 @@ customer_groups = {
 
 
 # Function to find the best price
-def get_best_price(product_id, quantity, customer_id): # 1, 4, 2
+def get_best_price(product_id, quantity, customer_id):
     # 1. CUSTOMER PRICE
     key = (customer_id, product_id)
-    if key in customer_prices:
-        for price_entry in customer_prices[key]:
-            if price_entry["min_qty"] <= quantity:
-                return {
-                    "product_id": f"P00{product_id}", 
-                    "price": price_entry["price"], 
-                    "price_type": "CUSTOMER"
-                }
-        
+    if(key in customer_prices):
+        valid_prices = [price_entry for price_entry in customer_prices[key] if price_entry["min_qty"] <= quantity]
+        if valid_prices:
+            best_price = min(valid_prices, key=lambda x: x["price"])
+            return {
+                "product_id": f"P00{product_id}", 
+                "price": best_price["price"], 
+                "price_type": "CUSTOMER"
+            }
 
     # 2. TIER PRICE
-    tier = customer_tiers.get(customer_id)        
+    tier = customer_tiers.get(customer_id)
     if tier:
-        key = (tier, product_id)
-        if key in tier_prices:
-            for price_entry in tier_prices[key]:
-                if price_entry["min_qty"] <= quantity:
-                    return {
-                        "product_id": f"P00{product_id}", 
-                        "price": price_entry["price"],
-                        "price_type": "TIER"
-                    }
+       key = (tier, product_id)
+       if key in tier_prices:
+           valid_prices = [price_entry for price_entry in tier_prices[key] if price_entry["min_qty"] <= quantity]
+           if valid_prices:
+               best_price = min(valid_prices, key=lambda x: x["price"])
+               return {
+                    "product_id": f"P00{product_id}", 
+                    "price": best_price["price"], 
+                    "price_type": "TIER"
+               }
 
     # 3. GROUP PRICE
-    groups = customer_groups.get(customer_id)
+    groups = customer_groups.get(customer_id, [])
     for group in groups:
         key = (group, product_id)
         if key in group_prices:
-            for price_entry in group_prices[key]:
-                if price_entry["min_qty"] <= quantity:
-                    return {
-                        "product_id": f"P00{product_id}",
-                        "price": price_entry["price"],
-                        "price_type": " GROUP"
-                    }
-
-    # 4. NORMAL PRICE
-    if product_id in normal_prices:
-        for price_entry in normal_prices[product_id]:
-            if price_entry["min_qty"] <= quantity:
+            valid_prices = [price_entry for price_entry in group_prices[key] if price_entry["min_qty"] <= quantity]
+            if valid_prices:
+                best_price = min(valid_prices, key=lambda x: x["price"])
                 return {
-                    "product_id": f"P00{product_id}",
-                    "price": price_entry["price"],
+                    "product_id": f"P00{product_id}", 
+                    "price": best_price["price"], 
+                    "price_type": "GROUP"
+                }
+    
+    # 4. NORMAL PRICE
+    if product_id:
+        if product_id in normal_prices:
+            valid_prices = [price_entry for price_entry in normal_prices[product_id] if price_entry["min_qty"] <= quantity]
+            if valid_prices:
+                best_price = min(valid_prices, key=lambda x: x["price"])
+                return {
+                    "product_id": f"P00{product_id}", 
+                    "price": best_price["price"], 
                     "price_type": "NORMAL"
                 }
+    
 
-    # No valid price found
-    return {"product_id": f"P00{product_id}", "price": None, "price_type": "NOT_FOUND"}
+     # No valid price found
+    return {
+        "product_id": f"P00{product_id}", 
+        "price": None, 
+        "price_type": "NOT_FOUND"
+    }
 
 
 # Main function to run everything
